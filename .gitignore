@@ -1,0 +1,5 @@
+*.vcd
+*.xml
+*.pyc
+*_cover
+/sim_build

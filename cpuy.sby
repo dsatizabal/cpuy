@@ -1,0 +1,16 @@
+[tasks]
+cover
+
+[options]
+cover: mode cover
+cover: depth 120
+
+[engines]
+smtbmc
+
+[script]
+read_verilog -formal fetcher.v
+prep -top fetcher
+
+[files]
+fetcher.v
