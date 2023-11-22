@@ -2,7 +2,7 @@
 `timescale 1ns/1ns
 `define Proteus
 
-// A simple 8-bits CPU with timer and interrupt support using external ROM and RAM
+// A simple 8-bits CPU with timer and interrupt support using external ROM
 module cpuy(
 	input wire clk,
 	input wire rst,
@@ -22,7 +22,12 @@ module cpuy(
 	localparam 		EI_INTERRUPTION_VECTOR = 12'h010; // External Interruption
 	localparam 		T0_INTERRUPTION_VECTOR = 12'h020; // Timer 0
 	localparam 		T1_INTERRUPTION_VECTOR = 12'h030; // Timer 1
-
+	// CPU State machine statuses
+	localparam 		RESETTING = 0;
+	localparam 		FETCHING_OPCODE = 1;
+	localparam 		FETCHING_OPERANDS = 2;
+	localparam 		EXECUTING = 3;
+	localparam 		INTERRUPT_REDIRECTION = 4;
 	// Interruption sources
 	localparam		NO_INTERRUPTION = 0; // None
 	localparam		EI_INTERRUPTION = 1; // External Interruption
@@ -30,15 +35,10 @@ module cpuy(
 	localparam 		T1_INTERRUPTION = 3; // Timer 1
 
 	reg	[11:0]		pc; // program counter
-	reg				cpu_state; // Current status of CPU state machine
-	reg 			interrupt_source;
+	reg	[2:0]		cpu_state; // Current state of CPU state machine
+	reg	[1:0]		reset_counter;
+	reg [2:0]		interrupt_source;
 	reg 			interrupt_sources_inhibit;
-
-	// CPU State machine statuses
-	localparam 		FETCHING_OPCODE = 0;
-	localparam 		FETCHING_OPERANDS = 1;
-	localparam 		EXECUTING = 2;
-	localparam 		INTERRUPT_REDIRECTION = 3;
 
 	// Flags register
 	// X X X X - X S Z C
@@ -99,7 +99,6 @@ module cpuy(
 	// T0 control signals
 	reg set_t0;
 	reg done_ack_t0;
-	reg done_ack_t0;
 	reg done_t0;
 
     timer tmr0 (
@@ -116,7 +115,6 @@ module cpuy(
 	// T1 control signals
 	reg set_t1;
 	reg done_ack_t1;
-	reg done_ack_t1;
 	reg done_t1;
 
     timer tmr1 (
@@ -131,7 +129,6 @@ module cpuy(
     );
 
 	// Stack control signals
-	reg rst_stack;
 	reg enable_stack;
 	reg rst_stack;
 	reg operation_stack;
@@ -170,7 +167,7 @@ module cpuy(
 	reg stack_operation_ucode;
 	reg stack_direction_ucode;
 	reg destination_cpu_config_ucode;
-	reg destination_timers_config_ucode;
+	reg destination_timer_config_ucode;
 
 	ucode ucode (
 		.clk (clk),
@@ -196,45 +193,34 @@ module cpuy(
 		.stack_operation (stack_operation_ucode),
 		.stack_direction (stack_direction_ucode),
 		.destination_cpu_config (destination_cpu_config_ucode),
-		.destination_timers_config (destination_timers_config_ucode)
+		.destination_timer_config (destination_timer_config_ucode)
 	);
 
 	always @(posedge clk) begin
 		if (rst) begin
-			pc <= RESET_VECTOR;
-			cpu_state <= FETCHING_OPCODE;
-
-			flags <= 8'b0000_0000;
-			w <= 0;
-
-			op_code <= 8'h00;
-			operands_count <= 2'b00;
-			current_operand <= 2'b00;
-
-			cpu_cfg <= 8'b0000_0000;
-			tmr_cfg <= 8'b0000_0000;
-
-			interrupt_source <= 0;
-			interrupt_sources_inhibit <= 0;
+			reset_counter <= 1;
+			cpu_state <= RESETTING;
 		end else begin
 			// Timer and interrupt control
-			if (cpu_cfg[7] & interrupt_source == 0) begin // Global Interruption enable, cannot trigger interrupt if other is in course
+			if (cpu_cfg[7] & (interrupt_source == 0)) begin // Global Interruption enable, cannot trigger interrupt if other is in course
 				if (cpu_cfg[6]) begin // External interruption enable
 					if (ext_int) begin
 						interrupt_source <= EI_INTERRUPTION;
 						interrupt_sources_inhibit <= 1;
-					end if
+					end
 				end
 				if (cpu_cfg[5] & !interrupt_sources_inhibit) begin // Timer 0 interruption enable
 					if (done_t0) begin
 						interrupt_source <= T0_INTERRUPTION;
 						interrupt_sources_inhibit <= 1;
-					end if
+						done_ack_t0 <= 1;
+					end
 				end
 				if (cpu_cfg[4] & !interrupt_sources_inhibit) begin // Timer 1 interruption enable
 					if (done_t1) begin
 						interrupt_source <= T1_INTERRUPTION;
-					end if
+						done_ack_t1 <= 1;
+					end
 				end
 
 				if (interrupt_source > 0) begin
@@ -246,22 +232,58 @@ module cpuy(
 			end
 
 			case (cpu_state)
-				INTERRUPT_REDIRECTION: begin
-					enable_stack <= 0;
-					interrupt_sources_inhibit <= 1;
-					if (interrupt_source == EI_INTERRUPTION) begin
-						pc <= EI_INTERRUPTION_VECTOR;
-					end
-					if (interrupt_source == T0_INTERRUPTION) begin
-						pc <= T0_INTERRUPTION_VECTOR;
-					end
-					if (interrupt_source == T1_INTERRUPTION) begin
-						pc <= T1_INTERRUPTION_VECTOR;
-					end
+				RESETTING: begin
+					if (reset_counter == 0) begin
+						cpu_state <= FETCHING_OPCODE;
+						rst_alu <= 0;
+						rst_stack <= 0;
+						done_ack_t0 <= 0;
+						done_ack_t1 <= 0;
+					end else begin
+						pc <= RESET_VECTOR;
 
-					cpu_state <= FETCHING_OPCODE;
+						interrupt_source <= NO_INTERRUPTION;
+						interrupt_sources_inhibit <= 0;
+
+						flags <= 8'b0000_0000;
+						cpu_cfg <= 8'b0000_0000;
+
+						ports[0] <= 0;
+						ports[1] <= 0;
+
+						w <= 0;
+						w_swap <= 0;
+
+						// TODO: Initialize registers
+
+						op_code <= 8'h00;
+						operands_count <= 2'b00;
+						current_operand <= 2'b00;
+
+						operands[0] <= 0;
+						operands[1] <= 0;
+						operands_cpy[0] <= 0;
+						operands_cpy[1] <= 0;
+
+						tmr_cfg <= 8'b0000_0000;
+
+						// Resets peripherals
+						rst_alu <= 1;
+						rst_stack <= 1;
+						done_ack_t0 <= 1;
+						done_ack_t1 <= 1;
+						set_t0 <= 0;
+						set_t1 <= 0;
+
+						reset_counter <= reset_counter - 1'b1;
+					end
 				end
+
 				FETCHING_OPCODE: begin
+					// Clears timer sets in case those had been set by a TmrCfg instruction
+					set_t0 <= 0;
+					set_t1 <= 0;
+
 					op_code <= data_bus;
 
 					if (op_code[7]) begin // Instructions with operands
@@ -349,8 +371,12 @@ module cpuy(
 							cpu_cfg <= w;
 						end
 
-						if (destination_timers_config_ucode) begin
-							tmr_cfg <= w; // TODO set corresponding timer for at least a clk cycle
+						if (destination_timer_config_ucode) begin
+							tmr_cfg <= w;
+
+							// Puts set pin of Timer module to high if corresponds to take the config values 
+							set_t0 <= w[0];
+							set_t1 <= w[4];
 						end
 
 						if (destination_w_ucode) begin
@@ -382,9 +408,26 @@ module cpuy(
 						end
 					end
 
-					cpu_state <= FETCHING_OPERANDS;
+					cpu_state <= FETCHING_OPCODE;
 				end
 
+				INTERRUPT_REDIRECTION: begin
+					enable_stack <= 0;
+					interrupt_sources_inhibit <= 1;
+					if (interrupt_source == EI_INTERRUPTION) begin
+						pc <= EI_INTERRUPTION_VECTOR;
+					end
+					if (interrupt_source == T0_INTERRUPTION) begin
+						pc <= T0_INTERRUPTION_VECTOR;
+						done_ack_t0 <= 0;
+					end
+					if (interrupt_source == T1_INTERRUPTION) begin
+						pc <= T1_INTERRUPTION_VECTOR;
+						done_ack_t1 <= 0;
+					end
+
+					cpu_state <= FETCHING_OPCODE;
+				end
 			endcase
 		end
 	end

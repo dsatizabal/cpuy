@@ -1,3 +1,3 @@
-# CPU Instructions prefetcher
+# CPU-Y: A simple 8-bits processor using external ROM and featuring Timers and Interruptions
 
-WIP: Prone to be discarded due to potential performance inefficiency
+WIP
