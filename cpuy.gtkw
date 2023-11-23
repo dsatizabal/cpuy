@@ -1,0 +1,60 @@
+[*]
+[*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
+[*] Thu Nov 23 17:53:24 2023
+[*]
+[dumpfile] "/home/dsatizabal/cpuy/cpuy.vcd"
+[dumpfile_mtime] "Thu Nov 23 17:52:46 2023"
+[dumpfile_size] 8198
+[savefile] "/home/dsatizabal/cpuy/cpuy.gtkw"
+[timestart] 0
+[size] 1920 1033
+[pos] -1 -1
+*-14.012850 85000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] tb.
+[treeopen] tb.cpuy.
+[sst_width] 276
+[signals_width] 270
+[sst_expanded] 1
+[sst_vpaned_height] 309
+@28
+tb.clk_tb
+tb.rst_tb
+@24
+tb.cpuy.cpu_state[2:0]
+tb.addr_bus_tb[11:0]
+tb.data_bus_tb[7:0]
+tb.cpuy.op_code[7:0]
+tb.p0_tb[7:0]
+tb.cpuy.operands_count[1:0]
+tb.cpuy.current_operand[1:0]
+tb.cpuy.w[7:0]
+@200
+-uCode signals
+@28
+tb.cpuy.alu_operation_ucode
+tb.cpuy.jump_operation_ucode
+tb.cpuy.mov_operation_ucode
+tb.cpuy.stack_operation_ucode
+tb.cpuy.destination_w_ucode
+tb.cpuy.destination_timer_config_ucode
+tb.cpuy.destination_registers_ucode
+tb.cpuy.destination_ports_ucode
+tb.cpuy.destination_memory_ucode
+tb.cpuy.destination_flags_ucode
+tb.cpuy.destination_cpu_config_ucode
+@25
+tb.cpuy.result_l_alu[7:0]
+@200
+-ALU Signals
+@28
+tb.cpuy.alu.clk
+tb.cpuy.alu.rst
+tb.cpuy.alu.enable
+@24
+tb.cpuy.alu.operation[7:0]
+tb.cpuy.alu.op1[7:0]
+tb.cpuy.alu.op2[7:0]
+tb.cpuy.alu.result_h[7:0]
+tb.cpuy.alu.result_l[7:0]
+[pattern_trace] 1
+[pattern_trace] 0

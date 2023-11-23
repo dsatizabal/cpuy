@@ -75,8 +75,8 @@ module cpuy(
 	// ALU control signals
 	reg rst_alu;
 	reg enable_alu;
-	reg result_h_alu;
-	reg result_l_alu;
+	reg [7:0] result_h_alu;
+	reg [7:0] result_l_alu;
 	reg carry_out_alu;
 	reg zero_out_alu;
 	reg sign_out_alu;
@@ -86,8 +86,8 @@ module cpuy(
         .rst (rst_alu),
         .enable (enable_alu),
         .operation (op_code),
-        .op1 (operands[0]),
-        .op2 (operands[1]),
+        .op1 (w),
+        .op2 (operands[0]),
         .cpu_carry (flags[0]),
         .result_l (result_l_alu),
         .result_h (result_h_alu),
@@ -158,8 +158,8 @@ module cpuy(
 	reg destination_memory_ucode;
 	reg destination_registers_ucode;
 	reg destination_ports_ucode;
-	reg destination_index_ucode;
-	reg [2:0] ram_operand_ucode;
+	reg [2:0] destination_index_ucode;
+	reg ram_operand_ucode;
 	reg duplicate_w_ucode;
 	reg source_ports_ucode;
 	reg source_registers_ucode;
@@ -196,7 +196,7 @@ module cpuy(
 		.destination_timer_config (destination_timer_config_ucode)
 	);
 
-	always @(posedge clk) begin
+	always @(negedge clk) begin
 		if (rst) begin
 			reset_counter <= 1;
 			cpu_state <= RESETTING;
@@ -236,6 +236,7 @@ module cpuy(
 					if (reset_counter == 0) begin
 						cpu_state <= FETCHING_OPCODE;
 						rst_alu <= 0;
+						enable_alu <= 1'b1;
 						rst_stack <= 0;
 						done_ack_t0 <= 0;
 						done_ack_t1 <= 0;
@@ -286,9 +287,9 @@ module cpuy(
 
 					op_code <= data_bus;
 
-					if (op_code[7]) begin // Instructions with operands
+					if (data_bus[7]) begin // Instructions with operands
 						cpu_state <= FETCHING_OPERANDS;
-						operands_count <= op_code[7] + 1'b1;
+						operands_count <= data_bus[0] + 1'b1;
 						current_operand <= 0;
 					end else begin // Instructions without operands
 						cpu_state <= EXECUTING;
@@ -305,35 +306,33 @@ module cpuy(
 				end
 
 				FETCHING_OPERANDS: begin // Fetch operands indicated in the opcode
-					if (current_operand < operands_count) begin
-						operands[current_operand] <= data_bus;
-						operands_cpy[current_operand] <= data_bus;
+					operands[current_operand] <= data_bus;
+					operands_cpy[current_operand] <= data_bus;
 
-						current_operand <= current_operand + 1'b1;
-
-						if (current_operand >= operands_count) begin
-							if (ram_operand_ucode) begin
-								operands[0] <= ram[operands_cpy[0]];
-							end
-
-							// Call instruction
-							if (stack_operation_ucode & stack_direction_ucode) begin
-								// TODO: validate that stack isn't full and properly handle exception
-								enable_stack <= 1;
-								operation_stack <= 1; // Push for call
-							end
-
-							cpu_state <= EXECUTING;
+					if (current_operand + 1'b1 >= operands_count) begin
+						if (ram_operand_ucode) begin
+							operands[0] <= ram[operands_cpy[0]];
 						end
+
+						// Call instruction
+						if (stack_operation_ucode & stack_direction_ucode) begin
+							// TODO: validate that stack isn't full and properly handle exception
+							enable_stack <= 1;
+							operation_stack <= 1; // Push for call
+						end
+
+						if (duplicate_w_ucode) begin
+							w_swap <= w;
+						end
+
+						operands_count <= 0;
+						current_operand <= 0;
+
+						cpu_state <= EXECUTING;
 					end else begin
-						cpu_state <= EXECUTING; // Never should happen
+						current_operand <= current_operand + 1'b1;
+						pc <= pc + 1;
 					end
-
-					if (duplicate_w_ucode) begin
-						w_swap <= w;
-					end
-
-					pc <= pc + 1;
 				end
 
 				EXECUTING: begin
