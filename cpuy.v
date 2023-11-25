@@ -26,8 +26,9 @@ module cpuy(
 	localparam 		RESETTING = 0;
 	localparam 		FETCHING_OPCODE = 1;
 	localparam 		FETCHING_OPERANDS = 2;
-	localparam 		EXECUTING = 3;
-	localparam 		INTERRUPT_REDIRECTION = 4;
+	localparam 		POPPING_STACK = 3;
+	localparam 		EXECUTING = 4;
+	localparam 		INTERRUPT_REDIRECTION = 5;
 	// Interruption sources
 	localparam		NO_INTERRUPTION = 0; // None
 	localparam		EI_INTERRUPTION = 1; // External Interruption
@@ -82,7 +83,6 @@ module cpuy(
 	reg sign_out_alu;
 
     alu alu(
-        .clk (clk),
         .rst (rst_alu),
         .enable (enable_alu),
         .operation (op_code),
@@ -170,7 +170,6 @@ module cpuy(
 	reg destination_timer_config_ucode;
 
 	ucode ucode (
-		.clk (clk),
 		.opcode (op_code),
 		.w (w),
 		.carry (flags[0]),
@@ -196,41 +195,11 @@ module cpuy(
 		.destination_timer_config (destination_timer_config_ucode)
 	);
 
-	always @(negedge clk) begin
+	always @(posedge clk) begin
 		if (rst) begin
 			reset_counter <= 1;
 			cpu_state <= RESETTING;
 		end else begin
-			// Timer and interrupt control
-			if (cpu_cfg[7] & (interrupt_source == 0)) begin // Global Interruption enable, cannot trigger interrupt if other is in course
-				if (cpu_cfg[6]) begin // External interruption enable
-					if (ext_int) begin
-						interrupt_source <= EI_INTERRUPTION;
-						interrupt_sources_inhibit <= 1;
-					end
-				end
-				if (cpu_cfg[5] & !interrupt_sources_inhibit) begin // Timer 0 interruption enable
-					if (done_t0) begin
-						interrupt_source <= T0_INTERRUPTION;
-						interrupt_sources_inhibit <= 1;
-						done_ack_t0 <= 1;
-					end
-				end
-				if (cpu_cfg[4] & !interrupt_sources_inhibit) begin // Timer 1 interruption enable
-					if (done_t1) begin
-						interrupt_source <= T1_INTERRUPTION;
-						done_ack_t1 <= 1;
-					end
-				end
-
-				if (interrupt_source > 0) begin
-					// TODO: validate that stack isn't full and properly handle exception
-					enable_stack <= 1;
-					operation_stack <= 1; // Push for interruption redirection
-					cpu_state <= INTERRUPT_REDIRECTION;
-				end
-			end
-
 			case (cpu_state)
 				RESETTING: begin
 					if (reset_counter == 0) begin
@@ -286,28 +255,29 @@ module cpuy(
 					set_t1 <= 0;
 
 					op_code <= data_bus;
+					pc <= pc + 1;
 
 					if (data_bus[7]) begin // Instructions with operands
 						cpu_state <= FETCHING_OPERANDS;
 						operands_count <= data_bus[0] + 1'b1;
 						current_operand <= 0;
 					end else begin // Instructions without operands
-						cpu_state <= EXECUTING;
+						// Ret instruction: bad implementation :S
+						if (data_bus == 8'b0011_1101) begin
+							// TODO: validate that stack isn't empty and properly handle exception
+							enable_stack <= 1;
+							operation_stack <= 0; // Pop for Ret from call
+							cpu_state <= POPPING_STACK;
+						end else begin
+							cpu_state <= EXECUTING;
+						end
 					end
-
-					// Ret instruction
-					if (stack_operation_ucode & !stack_direction_ucode) begin
-						// TODO: validate that stack isn't empty and properly handle exception
-						enable_stack <= 1;
-						operation_stack <= 0; // Pop for Ret from call
-					end
-
-					pc <= pc + 1;
 				end
 
 				FETCHING_OPERANDS: begin // Fetch operands indicated in the opcode
 					operands[current_operand] <= data_bus;
 					operands_cpy[current_operand] <= data_bus;
+					pc <= pc + 1;
 
 					if (current_operand + 1'b1 >= operands_count) begin
 						if (ram_operand_ucode) begin
@@ -331,8 +301,13 @@ module cpuy(
 						cpu_state <= EXECUTING;
 					end else begin
 						current_operand <= current_operand + 1'b1;
-						pc <= pc + 1;
 					end
+				end
+
+				POPPING_STACK: begin
+					enable_stack <= 0;
+					operation_stack <= 0; // Pop for Ret from call
+					cpu_state <= EXECUTING;
 				end
 
 				EXECUTING: begin
@@ -408,6 +383,33 @@ module cpuy(
 					end
 
 					cpu_state <= FETCHING_OPCODE;
+
+					// Timer and interrupt control: have to check higher priority interruptions on lower conditions to avoid triggering a double interrupt
+					// can also reverse the order of checking conditions but unsure if that would work better
+					if (cpu_cfg[7] & (interrupt_source == 0)) begin // Global Interruption enable, cannot trigger interrupt if other is in course
+						if (cpu_cfg[6] & ext_int) begin // External interruption enable
+							interrupt_source <= EI_INTERRUPTION;
+							interrupt_sources_inhibit <= 1;
+							enable_stack <= 1; // TODO: validate that stack isn't full and properly handle exception
+							operation_stack <= 1; // Push for interruption redirection
+							cpu_state <= INTERRUPT_REDIRECTION;
+						end
+						if (cpu_cfg[5] & done_t0 & !(cpu_cfg[6] & ext_int)) begin // Timer 0 interruption enable
+							interrupt_source <= T0_INTERRUPTION;
+							interrupt_sources_inhibit <= 1;
+							done_ack_t0 <= 1;
+							enable_stack <= 1; // TODO: validate that stack isn't full and properly handle exception
+							operation_stack <= 1; // Push for interruption redirection
+							cpu_state <= INTERRUPT_REDIRECTION;
+						end
+						if (cpu_cfg[4] & done_t1 & !(cpu_cfg[5] & done_t0) & !(cpu_cfg[6] & ext_int)) begin // Timer 1 interruption enable
+							interrupt_source <= T1_INTERRUPTION;
+							done_ack_t1 <= 1;
+							enable_stack <= 1; // TODO: validate that stack isn't full and properly handle exception
+							operation_stack <= 1; // Push for interruption redirection
+							cpu_state <= INTERRUPT_REDIRECTION;
+						end
+					end
 				end
 
 				INTERRUPT_REDIRECTION: begin
