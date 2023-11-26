@@ -132,9 +132,11 @@ module alu (
 								end
 								8'b0000_0100: begin // SetC
 									ca = 1;
+									res_l = op1;
 								end
 								8'b0000_0101: begin // ClrC
 									ca = 0;
+									res_l = op1;
 								end
 								8'b0000_0110: begin // RL in loop
 									if (op1 == 0) ze = 1;

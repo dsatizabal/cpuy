@@ -66,7 +66,6 @@ module cpuy(
 	reg		[1:0]   operands_count;
 	reg		[1:0]   current_operand;
 	reg		[7:0] 	operands	[1:0];
-	reg		[7:0] 	operands_cpy	[1:0]; // For internal use only
 
 	// Timer control
 	// [x] [T1AR] [T1DIR] [T1E] _ [x] [T0AR] [T0DIR] [T0E]
@@ -163,11 +162,11 @@ module cpuy(
 	reg duplicate_w_ucode;
 	reg source_ports_ucode;
 	reg source_registers_ucode;
-
 	reg stack_operation_ucode;
 	reg stack_direction_ucode;
 	reg destination_cpu_config_ucode;
 	reg destination_timer_config_ucode;
+	reg source_operands_ucode;
 
 	ucode ucode (
 		.opcode (op_code),
@@ -192,8 +191,43 @@ module cpuy(
 		.stack_operation (stack_operation_ucode),
 		.stack_direction (stack_direction_ucode),
 		.destination_cpu_config (destination_cpu_config_ucode),
-		.destination_timer_config (destination_timer_config_ucode)
+		.destination_timer_config (destination_timer_config_ucode),
+		.source_operands(source_operands_ucode)
 	);
+
+	// DEBUG REGION
+	integer i;
+	initial begin
+	for (i = 0; i < RAM_SIZE; i = i + 1)
+		ram[i] = 0;
+	end
+
+	generate
+	genvar o;
+	for(o = 0; o < 2; o = o + 1) begin: operadns_dump
+		wire [7:0] ops;
+		assign ops = operands[o];
+	end
+	endgenerate
+
+	generate
+	genvar m;
+	for(m = 0; m < 32; m = m + 1) begin: ram_dump
+		wire [7:0] mems;
+		assign mems = ram[m];
+	end
+	endgenerate
+
+	/*
+	generate
+	genvar r;
+	for(r = 0; r < 8; r = r + 1) begin: registers_dump
+		wire [31:0] tmp;
+		assign tmp = registers[r];
+	end
+	endgenerate
+	*/
+	// END DEBUG REGION
 
 	always @(posedge clk) begin
 		if (rst) begin
@@ -232,8 +266,6 @@ module cpuy(
 
 						operands[0] <= 0;
 						operands[1] <= 0;
-						operands_cpy[0] <= 0;
-						operands_cpy[1] <= 0;
 
 						tmr_cfg <= 8'b0000_0000;
 
@@ -276,14 +308,13 @@ module cpuy(
 
 				FETCHING_OPERANDS: begin // Fetch operands indicated in the opcode
 					operands[current_operand] <= data_bus;
-					operands_cpy[current_operand] <= data_bus;
 					pc <= pc + 1;
 
-					if (current_operand + 1'b1 >= operands_count) begin
-						if (ram_operand_ucode) begin
-							operands[0] <= ram[operands_cpy[0]];
-						end
+					if (ram_operand_ucode && current_operand == 0) begin
+						operands[0] <= ram[data_bus];
+					end
 
+					if (current_operand + 1'b1 >= operands_count) begin
 						// Call instruction
 						if (stack_operation_ucode & stack_direction_ucode) begin
 							// TODO: validate that stack isn't full and properly handle exception
@@ -319,7 +350,7 @@ module cpuy(
 						flags[2] <= sign_out_alu;
 
 						if (alu_multibyte_result_ucode) begin
-							ram[operands[2]] <= result_h_alu;
+							ram[operands[1]] <= result_h_alu;
 						end
 					end
 
@@ -336,9 +367,8 @@ module cpuy(
 							ports[destination_index_ucode] <= w;
 						end						
 
-						if (destination_w_ucode & destination_memory_ucode) begin
-							w <= ram[operands[0]];
-							ram[operands[0]] <= w_swap;
+						if (destination_memory_ucode & !destination_w_ucode) begin
+							ram[operands[0]] <= source_operands_ucode ? operands[1] : w;
 						end
 
 						if (destination_cpu_config_ucode) begin

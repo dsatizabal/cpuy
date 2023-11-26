@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
-[*] Sat Nov 25 14:21:46 2023
+[*] Sat Nov 25 22:36:50 2023
 [*]
 [dumpfile] "/home/dsatizabal/cpuy/cpuy.vcd"
-[dumpfile_mtime] "Sat Nov 25 14:21:20 2023"
-[dumpfile_size] 20933
+[dumpfile_mtime] "Sat Nov 25 22:33:35 2023"
+[dumpfile_size] 13863
 [savefile] "/home/dsatizabal/cpuy/cpuy.gtkw"
 [timestart] 0
 [size] 1920 1033
 [pos] -1 -1
-*-16.367884 70000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-15.518373 100000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] tb.
 [treeopen] tb.cpuy.
 [sst_width] 276
@@ -25,18 +25,39 @@ tb.addr_bus_tb[11:0]
 tb.data_bus_tb[7:0]
 tb.cpuy.op_code[7:0]
 tb.p0_tb[7:0]
+tb.p1_tb[7:0]
 tb.cpuy.operands_count[1:0]
 tb.cpuy.current_operand[1:0]
 tb.cpuy.w[7:0]
 @22
 tb.cpuy.pc[11:0]
 tb.cpuy.cpu_cfg[7:0]
-@23
 tb.cpuy.flags[7:0]
+@c00024
++{tb.cpuy.operadns_dump[0].ops0[7:0]} tb.cpuy.operadns_dump[0].ops[7:0]
+@28
+(0)tb.cpuy.operadns_dump[0].ops[7:0]
+(1)tb.cpuy.operadns_dump[0].ops[7:0]
+(2)tb.cpuy.operadns_dump[0].ops[7:0]
+(3)tb.cpuy.operadns_dump[0].ops[7:0]
+(4)tb.cpuy.operadns_dump[0].ops[7:0]
+(5)tb.cpuy.operadns_dump[0].ops[7:0]
+(6)tb.cpuy.operadns_dump[0].ops[7:0]
+(7)tb.cpuy.operadns_dump[0].ops[7:0]
+@1401200
+-group_end
+@24
++{tb.cpuy.operadns_dump[1].ops1[7:0]} tb.cpuy.operadns_dump[1].ops[7:0]
+@22
++{tb.cpuy.ram_dump[5].mems5[7:0]} tb.cpuy.ram_dump[5].mems[7:0]
++{tb.cpuy.ram_dump[7].mems7[7:0]} tb.cpuy.ram_dump[7].mems[7:0]
+@24
++{tb.cpuy.ram_dump[16].mems16[7:0]} tb.cpuy.ram_dump[16].mems[7:0]
 @200
 -uCode signals
 @28
 tb.cpuy.alu_operation_ucode
+tb.cpuy.alu_multibyte_result_ucode
 tb.cpuy.jump_operation_ucode
 tb.cpuy.jump_condition_ucode
 tb.cpuy.mov_operation_ucode
@@ -59,6 +80,8 @@ tb.cpuy.interrupt_source[2:0]
 @28
 tb.cpuy.interrupt_sources_inhibit
 tb.cpuy.enable_stack
+tb.cpuy.ram_operand_ucode
+tb.cpuy.source_operands_ucode
 @200
 -ALU Signals
 @28
@@ -74,6 +97,10 @@ tb.cpuy.alu.result_l[7:0]
 tb.cpuy.cpu_cfg[7:0]
 @24
 tb.cpuy.tmr_cfg[7:0]
+@29
+tb.cpuy.alu.cpu_carry
+@28
+tb.cpuy.alu.carry
 @200
 -T0 Signals
 @28
@@ -107,5 +134,7 @@ tb.cpuy.stack.data_in[15:0]
 tb.cpuy.stack.data_out[15:0]
 @22
 tb.cpuy.stack.stack_ptr[3:0]
+tb.cpuy.operadns_dump[1].ops[7:0]
+tb.cpuy.operadns_dump[1].ops[7:0]
 [pattern_trace] 1
 [pattern_trace] 0

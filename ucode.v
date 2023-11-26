@@ -13,7 +13,7 @@ module ucode (
     output wire jump_condition,
     output wire mov_operation,
     output wire destination_w,
-    output wire destination_flags,
+    output wire destination_flags, // TODO: remove this unrequired signal
     output wire destination_memory,
     output wire destination_registers,
     output wire destination_ports,
@@ -25,7 +25,8 @@ module ucode (
     output wire stack_operation,
     output wire stack_direction, // 0 Pop, 1 Push
 	output wire destination_cpu_config,
-	output wire destination_timer_config
+	output wire destination_timer_config,
+	output wire source_operands
 );
 	reg alu_op;
     reg alu_mb;
@@ -46,6 +47,7 @@ module ucode (
     reg stack_dir;
 	reg dst_cpu_cfg;
 	reg dst_tmr_cfg;
+	reg src_op;
 
     assign alu_operation = alu_op;
     assign alu_multibyte_result = alu_mb;
@@ -66,6 +68,7 @@ module ucode (
     assign stack_direction = stack_dir;
 	assign destination_cpu_config = dst_cpu_cfg;
 	assign destination_timer_config = dst_tmr_cfg;
+	assign source_operands = src_op;
 
 	always @(*) begin
 		alu_op = 0;
@@ -87,6 +90,7 @@ module ucode (
 		stack_dir = 0;
 		dst_cpu_cfg = 0;
 		dst_tmr_cfg = 0;
+		src_op = 0;
 
 		case (opcode)
 			// Instructions without operands
@@ -512,10 +516,12 @@ module ucode (
 			end
 			8'b1000_0110: begin // MovLM
 				mov_op = 1;
+				src_op <= 1;
 				dst_memory = 1;
 			end
 			8'b1000_0111: begin // MovLM
 				mov_op = 1;
+				src_op <= 1;
 				dst_memory = 1;
 			end
 			8'b1000_1000: begin // AddLW
