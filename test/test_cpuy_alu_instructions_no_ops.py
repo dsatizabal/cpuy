@@ -11,7 +11,7 @@ rlw = [132, 1, 6, 64, 0, 0, 127] # Program ends
 rrw = [132, 128, 7, 64, 0, 0, 127] # Program ends
 rlc = [132, 1, 4, 8, 64, 0, 0, 127] # Program ends
 rrc = [132, 2, 4, 9, 64, 0, 0, 127] # Program ends
-"""
+
 @cocotb.test()
 async def decrement_work(dut):
     clock = Clock(dut.clk_tb, 10, "us")
@@ -136,7 +136,7 @@ async def rotate_right_work(dut):
         await Timer(1, units="ns");
     
     assert dut.p0_tb.value == 64, f"Unexpected P0: desired 64, got {dut.p0_tb.value}";
-"""
+
 @cocotb.test()
 async def rotate_left_through_carry_work(dut):
     clock = Clock(dut.clk_tb, 10, "us")
