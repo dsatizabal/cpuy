@@ -1,6 +1,4 @@
 `default_nettype none
-`timescale 1ns/1ns
-`define Proteus
 
 // A simple 8-bits CPU with timer and interrupt support using external ROM
 module cpuy(
@@ -8,20 +6,29 @@ module cpuy(
 	input wire rst,
 	input wire ext_int,
 	input wire [7:0] data_bus,
-	output reg [11:0] addr_bus,
-	output reg [7:0] p0,
-	output reg [7:0] p1
+	input wire [7:0] p0in,
+	input wire [3:0] p1in,
+	output wire [9:0] addr_bus,
+	output wire [7:0] p0out,
+	output wire [3:0] p1out,
+	output wire [7:0] p0cfg,
+	output wire [3:0] p1cfg
 );
 	assign addr_bus = pc;
-	assign p0 = ports[0];
-	assign p1 = ports[1];
+
+	// TODO: Port cfg insntruction, and how to read from propper source according to por cfg
+	assign p0out = ports[0];
+	assign p1out = ports[1][3:0];
+
+	assign p0cfg = ports_cfg[0];
+	assign p1cfg = ports_cfg[1][3:0];
 
 	// Some internal parameters definitions
 	localparam 		RAM_SIZE = 256;
-	localparam 		RESET_VECTOR = 12'h000;
-	localparam 		EI_INTERRUPTION_VECTOR = 12'h010; // External Interruption
-	localparam 		T0_INTERRUPTION_VECTOR = 12'h020; // Timer 0
-	localparam 		T1_INTERRUPTION_VECTOR = 12'h030; // Timer 1
+	localparam 		RESET_VECTOR = 10'b00_0000_0000;
+	localparam 		EI_INTERRUPTION_VECTOR = 10'b00_0001_0000; // External Interruption 0x10
+	localparam 		T0_INTERRUPTION_VECTOR = 10'b00_0010_0000; // Timer 0 0x20
+	localparam 		T1_INTERRUPTION_VECTOR = 10'b00_0011_0000; // Timer 1 0x30
 	// CPU State machine statuses
 	localparam 		RESETTING = 0;
 	localparam 		FETCHING_OPCODE = 1;
@@ -35,7 +42,7 @@ module cpuy(
 	localparam 		T0_INTERRUPTION = 2; // Timer 0
 	localparam 		T1_INTERRUPTION = 3; // Timer 1
 
-	reg	[11:0]		pc; // program counter
+	reg	[9:0]		pc; // program counter
 	reg	[2:0]		cpu_state; // Current state of CPU state machine
 	reg	[1:0]		reset_counter;
 	reg [2:0]		interrupt_source;
@@ -50,7 +57,8 @@ module cpuy(
 	reg		[7:0]   cpu_cfg;
 
 	// IO Ports
-	reg		[7:0] 	ports 	[1:0];
+	reg		[7:0] 	ports 		[1:0];
+	reg		[7:0] 	ports_cfg 	[1:0];
 
 	// Work register
 	reg		[7:0]   w;
@@ -60,7 +68,7 @@ module cpuy(
 	reg		[7:0] 	registers	[7:0];
 
 	// 256 bytes memory bank
-	reg 	[0:7] 	ram[RAM_SIZE - 1:0];
+	reg 	[7:0] 	ram[RAM_SIZE - 1:0];
 
 	reg		[7:0]   op_code;
 	reg		[1:0]   operands_count;
@@ -73,7 +81,6 @@ module cpuy(
 
     // Peripherals instantiation
 	// ALU control signals
-	reg rst_alu;
 	reg enable_alu;
 	reg [7:0] result_h_alu;
 	reg [7:0] result_l_alu;
@@ -82,7 +89,6 @@ module cpuy(
 	reg sign_out_alu;
 
     alu alu(
-        .rst (rst_alu),
         .enable (enable_alu),
         .operation (op_code),
         .op1 (w),
@@ -131,7 +137,7 @@ module cpuy(
 	reg enable_stack;
 	reg rst_stack;
 	reg operation_stack;
-	reg [15:0] data_out_stack;
+	reg [9:0] data_out_stack;
 	reg full_stack;
 	reg empty_stack;
 
@@ -166,6 +172,7 @@ module cpuy(
 	reg stack_direction_ucode;
 	reg destination_cpu_config_ucode;
 	reg destination_timer_config_ucode;
+	reg destination_ports_config_ucode;
 	reg source_operands_ucode;
 
 	ucode ucode (
@@ -173,6 +180,7 @@ module cpuy(
 		.w (w),
 		.carry (flags[0]),
 		.zero (flags[1]),
+		.sign(flags[2]),
 		.alu_operation (alu_operation_ucode),
 		.alu_multibyte_result (alu_multibyte_result_ucode),
 		.jump_operation (jump_operation_ucode),
@@ -192,10 +200,12 @@ module cpuy(
 		.stack_direction (stack_direction_ucode),
 		.destination_cpu_config (destination_cpu_config_ucode),
 		.destination_timer_config (destination_timer_config_ucode),
+		.destination_ports_config (destination_ports_config_ucode),
 		.source_operands(source_operands_ucode)
 	);
 
 	// DEBUG REGION
+	/*
 	integer i;
 	initial begin
 	for (i = 0; i < RAM_SIZE; i = i + 1)
@@ -218,7 +228,6 @@ module cpuy(
 	end
 	endgenerate
 
-	/*
 	generate
 	genvar r;
 	for(r = 0; r < 8; r = r + 1) begin: registers_dump
@@ -238,7 +247,6 @@ module cpuy(
 				RESETTING: begin
 					if (reset_counter == 0) begin
 						cpu_state <= FETCHING_OPCODE;
-						rst_alu <= 0;
 						enable_alu <= 1'b1;
 						rst_stack <= 0;
 						done_ack_t0 <= 0;
@@ -254,6 +262,8 @@ module cpuy(
 
 						ports[0] <= 0;
 						ports[1] <= 0;
+						ports_cfg[0] <= 0;
+						ports_cfg[1] <= 0;
 
 						w <= 0;
 						w_swap <= 0;
@@ -270,7 +280,6 @@ module cpuy(
 						tmr_cfg <= 8'b0000_0000;
 
 						// Resets peripherals
-						rst_alu <= 1;
 						rst_stack <= 1;
 						done_ack_t0 <= 1;
 						done_ack_t1 <= 1;
@@ -295,7 +304,7 @@ module cpuy(
 						current_operand <= 0;
 					end else begin // Instructions without operands
 						// Ret instruction: bad implementation :S
-						if (data_bus == 8'b0011_1101) begin
+						if (data_bus == 8'b0011_1100) begin
 							// TODO: validate that stack isn't empty and properly handle exception
 							enable_stack <= 1;
 							operation_stack <= 0; // Pop for Ret from call
@@ -383,9 +392,18 @@ module cpuy(
 							set_t1 <= w[4];
 						end
 
+						if (destination_ports_config_ucode) begin
+							ports_cfg[0] <= registers[0];
+							ports_cfg[1] <= registers[1][3:0];
+						end
+
 						if (destination_w_ucode) begin
 							if (source_ports_ucode) begin
-								w <= ports[destination_index_ucode];
+								if (destination_index_ucode == 3'b000) begin
+									w <= ((p0in & ports_cfg[0]) | (ports[0] & ~ports_cfg[0]));
+								end else begin
+									w <= (( { 4'b0000, p1in } & ports_cfg[1]) | ( { 4'b0000, ports[1][3:0] } & ~ports_cfg[1]));
+								end
 							end else if (source_registers_ucode) begin
 								w <= registers[destination_index_ucode];
 							end else if (destination_memory_ucode) begin

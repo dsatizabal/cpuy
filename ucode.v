@@ -1,5 +1,4 @@
 `default_nettype none
-`timescale 1ns/1ns
 
 module ucode (
     input wire [7:0] opcode,
@@ -26,6 +25,7 @@ module ucode (
     output wire stack_direction, // 0 Pop, 1 Push
 	output wire destination_cpu_config,
 	output wire destination_timer_config,
+	output wire destination_ports_config,
 	output wire source_operands
 );
 	reg alu_op;
@@ -47,6 +47,7 @@ module ucode (
     reg stack_dir;
 	reg dst_cpu_cfg;
 	reg dst_tmr_cfg;
+	reg dst_ports_cfg;
 	reg src_op;
 
     assign alu_operation = alu_op;
@@ -68,6 +69,7 @@ module ucode (
     assign stack_direction = stack_dir;
 	assign destination_cpu_config = dst_cpu_cfg;
 	assign destination_timer_config = dst_tmr_cfg;
+	assign destination_ports_config = dst_ports_cfg;
 	assign source_operands = src_op;
 
 	always @(*) begin
@@ -90,11 +92,32 @@ module ucode (
 		stack_dir = 0;
 		dst_cpu_cfg = 0;
 		dst_tmr_cfg = 0;
+		dst_ports_cfg = 0;
 		src_op = 0;
 
 		case (opcode)
 			// Instructions without operands
 			8'b0000_0000: begin // NOP does nothing
+				alu_op = 0;
+				alu_mb = 0;
+				jmp_op = 0;
+				jmp_condition = 0;
+				mov_op = 0;
+				dst_w = 0;
+				dst_f = 0;
+				dst_memory = 0;
+				dst_reg = 0;
+				dst_por = 0;
+				dst_index = 0;
+				ram_op = 0;
+				dup_w = 0;
+				src_port = 0;
+				src_reg = 0;
+				stack_op = 0;
+				stack_dir = 0;
+				dst_cpu_cfg = 0;
+				dst_tmr_cfg = 0;
+				src_op = 0;
 			end
 			8'b0000_0001: begin // Dec
 				alu_op = 1;
@@ -136,110 +159,112 @@ module ucode (
 				alu_op = 1;
 				dst_w = 1;
 			end
-			8'b0000_1011: begin
-			end
-			8'b0000_1100: begin
-			end
-			8'b0000_1101: begin
-			end
-			8'b0000_1110: begin
-			end
-			8'b0000_1111: begin
-			end
-			8'b0001_0000: begin
-			end
-			8'b0001_0001: begin
-			end
-			8'b0001_0010: begin
-			end
-			8'b0001_0011: begin
-			end
-			8'b0001_0100: begin
-			end
-			8'b0001_0101: begin
-			end
-			8'b0001_0110: begin
-			end
-			8'b0001_0111: begin
-			end
-			8'b0001_1000: begin
-			end
-			8'b0001_1001: begin
-			end
-			8'b0001_1010: begin
-			end
-			8'b0001_1011: begin
-			end
-			8'b0001_1100: begin
-			end
-			8'b0001_1101: begin
-			end
-			8'b0001_1110: begin
-			end
-			8'b0001_1111: begin
-			end
-			8'b0010_0000: begin
-			end
-			8'b0010_0001: begin
-			end
-			8'b0010_0010: begin
-			end
-			8'b0010_0011: begin
-			end
-			8'b0010_0100: begin
-			end
-			8'b0010_0101: begin
-			end
-			8'b0010_0110: begin
-			end
-			8'b0010_0111: begin
-			end
-			8'b0010_1000: begin
-			end
-			8'b0010_1001: begin
-			end
-			8'b0010_1010: begin
-			end
-			8'b0010_1011: begin
-			end
-			8'b0010_1100: begin
-			end
-			8'b0010_1101: begin
-			end
-			8'b0010_1110: begin
-			end
-			8'b0010_1111: begin
-			end
-			8'b0011_0000: begin
-			end
-			8'b0011_0001: begin
-			end
-			8'b0011_0010: begin
-			end
-			8'b0011_0011: begin
-			end
-			8'b0011_0100: begin
-			end
-			8'b0011_0101: begin
-			end
-			8'b0011_0110: begin
-			end
-			8'b0011_0111: begin
-			end
-			8'b0011_1000: begin
-			end
-			8'b0011_1001: begin
-			end
-			8'b0011_1010: begin
-			end
-			8'b0011_1011: begin
-			end
-			8'b0011_1100: begin
-			end
+			// 8'b0000_1011: begin
+			// end
+			// 8'b0000_1100: begin
+			// end
+			// 8'b0000_1101: begin
+			// end
+			// 8'b0000_1110: begin
+			// end
+			// 8'b0000_1111: begin
+			// end
+			// 8'b0001_0000: begin
+			// end
+			// 8'b0001_0001: begin
+			// end
+			// 8'b0001_0010: begin
+			// end
+			// 8'b0001_0011: begin
+			// end
+			// 8'b0001_0100: begin
+			// end
+			// 8'b0001_0101: begin
+			// end
+			// 8'b0001_0110: begin
+			// end
+			// 8'b0001_0111: begin
+			// end
+			// 8'b0001_1000: begin
+			// end
+			// 8'b0001_1001: begin
+			// end
+			// 8'b0001_1010: begin
+			// end
+			// 8'b0001_1011: begin
+			// end
+			// 8'b0001_1100: begin
+			// end
+			// 8'b0001_1101: begin
+			// end
+			// 8'b0001_1110: begin
+			// end
+			// 8'b0001_1111: begin
+			// end
+			// 8'b0010_0000: begin
+			// end
+			// 8'b0010_0001: begin
+			// end
+			// 8'b0010_0010: begin
+			// end
+			// 8'b0010_0011: begin
+			// end
+			// 8'b0010_0100: begin
+			// end
+			// 8'b0010_0101: begin
+			// end
+			// 8'b0010_0110: begin
+			// end
+			// 8'b0010_0111: begin
+			// end
+			// 8'b0010_1000: begin
+			// end
+			// 8'b0010_1001: begin
+			// end
+			// 8'b0010_1010: begin
+			// end
+			// 8'b0010_1011: begin
+			// end
+			// 8'b0010_1100: begin
+			// end
+			// 8'b0010_1101: begin
+			// end
+			// 8'b0010_1110: begin
+			// end
+			// 8'b0010_1111: begin
+			// end
+			// 8'b0011_0000: begin
+			// end
+			// 8'b0011_0001: begin
+			// end
+			// 8'b0011_0010: begin
+			// end
+			// 8'b0011_0011: begin
+			// end
+			// 8'b0011_0100: begin
+			// end
+			// 8'b0011_0101: begin
+			// end
+			// 8'b0011_0110: begin
+			// end
+			// 8'b0011_0111: begin
+			// end
+			// 8'b0011_1000: begin
+			// end
+			// 8'b0011_1001: begin
+			// end
+			// 8'b0011_1010: begin
+			// end
+			// 8'b0011_1011: begin
+			// end
 
-			8'b0011_1101: begin // Ret
+			8'b0011_1100: begin // Ret
 				stack_op = 1;
 				stack_dir = 0;
+			end
+			8'b0011_1101: begin // PortsCfg
+				mov_op = 1;
+				dst_ports_cfg = 1;
 			end
 			8'b0011_1110: begin // CpuCfg
 				mov_op = 1;
@@ -260,18 +285,18 @@ module ucode (
 				dst_por = 1;
 				dst_index = opcode[2:0];
 			end
-			8'b0100_0010: begin
-			end
-			8'b0100_0011: begin
-			end
-			8'b0100_0100: begin
-			end
-			8'b0100_0101: begin
-			end
-			8'b0100_0110: begin
-			end
-			8'b0100_0111: begin
-			end
+			// 8'b0100_0010: begin
+			// end
+			// 8'b0100_0011: begin
+			// end
+			// 8'b0100_0100: begin
+			// end
+			// 8'b0100_0101: begin
+			// end
+			// 8'b0100_0110: begin
+			// end
+			// 8'b0100_0111: begin
+			// end
 
 			8'b0100_1000: begin // MovP0W
 				mov_op = 1;
@@ -285,18 +310,18 @@ module ucode (
 				src_port = 1;
 				dst_index = opcode[2:0];
 			end
-			8'b0100_1010: begin
-			end
-			8'b0100_1011: begin
-			end
-			8'b0100_1100: begin
-			end
-			8'b0100_1101: begin
-			end
-			8'b0100_1110: begin
-			end
-			8'b0100_1111: begin
-			end
+			// 8'b0100_1010: begin
+			// end
+			// 8'b0100_1011: begin
+			// end
+			// 8'b0100_1100: begin
+			// end
+			// 8'b0100_1101: begin
+			// end
+			// 8'b0100_1110: begin
+			// end
+			// 8'b0100_1111: begin
+			// end
 
 			8'b0101_0000: begin // MovWR0
 				mov_op = 1;
@@ -454,38 +479,38 @@ module ucode (
 				dst_w = 1;
 			end
 
-			8'b0111_0000: begin
-			end
-			8'b0111_0001: begin
-			end
-			8'b0111_0010: begin
-			end
-			8'b0111_0011: begin
-			end
-			8'b0111_0100: begin
-			end
-			8'b0111_0101: begin
-			end
-			8'b0111_0110: begin
-			end
-			8'b0111_0111: begin
-			end
-			8'b0111_1000: begin
-			end
-			8'b0111_1001: begin
-			end
-			8'b0111_1010: begin
-			end
-			8'b0111_1011: begin
-			end
-			8'b0111_1100: begin
-			end
-			8'b0111_1101: begin
-			end
-			8'b0111_1110: begin
-			end
-			8'b0111_1111: begin
-			end
+			// 8'b0111_0000: begin
+			// end
+			// 8'b0111_0001: begin
+			// end
+			// 8'b0111_0010: begin
+			// end
+			// 8'b0111_0011: begin
+			// end
+			// 8'b0111_0100: begin
+			// end
+			// 8'b0111_0101: begin
+			// end
+			// 8'b0111_0110: begin
+			// end
+			// 8'b0111_0111: begin
+			// end
+			// 8'b0111_1000: begin
+			// end
+			// 8'b0111_1001: begin
+			// end
+			// 8'b0111_1010: begin
+			// end
+			// 8'b0111_1011: begin
+			// end
+			// 8'b0111_1100: begin
+			// end
+			// 8'b0111_1101: begin
+			// end
+			// 8'b0111_1110: begin
+			// end
+			// 8'b0111_1111: begin
+			// end
 
 			// Instructions with operands
 			8'b1000_0000: begin // MovMW
@@ -516,12 +541,12 @@ module ucode (
 			end
 			8'b1000_0110: begin // MovLM
 				mov_op = 1;
-				src_op <= 1;
+				src_op = 1;
 				dst_memory = 1;
 			end
 			8'b1000_0111: begin // MovLM
 				mov_op = 1;
-				src_op <= 1;
+				src_op = 1;
 				dst_memory = 1;
 			end
 			8'b1000_1000: begin // AddLW
@@ -693,113 +718,113 @@ module ucode (
 				stack_dir = 1;
 			end
 
-			8'b1010_1100: begin
-			end
-			8'b1010_1101: begin
-			end
-			8'b1010_1110: begin
-			end
-			8'b1010_1111: begin
-			end
-			8'b1011_0000: begin
-			end
-			8'b1011_0001: begin
-			end
-			8'b1011_0010: begin
-			end
-			8'b1011_0011: begin
-			end
-			8'b1011_0100: begin
-			end
-			8'b1011_0101: begin
-			end
-			8'b1011_0110: begin
-			end
-			8'b1011_0111: begin
-			end
-			8'b1011_1000: begin
-			end
-			8'b1011_1001: begin
-			end
-			8'b1011_1010: begin
-			end
-			8'b1011_1011: begin
-			end
-			8'b1011_1100: begin
-			end
-			8'b1011_1101: begin
-			end
-			8'b1011_1110: begin
-			end
-			8'b1011_1111: begin
-			end
-			8'b1100_0000: begin
-			end
-			8'b1100_0001: begin
-			end
-			8'b1100_0010: begin
-			end
-			8'b1100_0011: begin
-			end
-			8'b1100_0100: begin
-			end
-			8'b1100_0101: begin
-			end
-			8'b1100_0110: begin
-			end
-			8'b1100_0111: begin
-			end
-			8'b1100_1000: begin
-			end
-			8'b1100_1001: begin
-			end
-			8'b1100_1010: begin
-			end
-			8'b1100_1011: begin
-			end
-			8'b1100_1100: begin
-			end
-			8'b1100_1101: begin
-			end
-			8'b1100_1110: begin
-			end
-			8'b1100_1111: begin
-			end
-			8'b1101_0000: begin
-			end
-			8'b1101_0001: begin
-			end
-			8'b1101_0010: begin
-			end
-			8'b1101_0011: begin
-			end
-			8'b1101_0100: begin
-			end
-			8'b1101_0101: begin
-			end
-			8'b1101_0110: begin
-			end
-			8'b1101_0111: begin
-			end
-			8'b1101_1000: begin
-			end
-			8'b1101_1001: begin
-			end
-			8'b1101_1010: begin
-			end
-			8'b1101_1011: begin
-			end
-			8'b1101_1100: begin
-			end
-			8'b1101_1101: begin
-			end
-			8'b1101_1110: begin
-			end
-			8'b1101_1111: begin
-			end
+			// 8'b1010_1100: begin
+			// end
+			// 8'b1010_1101: begin
+			// end
+			// 8'b1010_1110: begin
+			// end
+			// 8'b1010_1111: begin
+			// end
+			// 8'b1011_0000: begin
+			// end
+			// 8'b1011_0001: begin
+			// end
+			// 8'b1011_0010: begin
+			// end
+			// 8'b1011_0011: begin
+			// end
+			// 8'b1011_0100: begin
+			// end
+			// 8'b1011_0101: begin
+			// end
+			// 8'b1011_0110: begin
+			// end
+			// 8'b1011_0111: begin
+			// end
+			// 8'b1011_1000: begin
+			// end
+			// 8'b1011_1001: begin
+			// end
+			// 8'b1011_1010: begin
+			// end
+			// 8'b1011_1011: begin
+			// end
+			// 8'b1011_1100: begin
+			// end
+			// 8'b1011_1101: begin
+			// end
+			// 8'b1011_1110: begin
+			// end
+			// 8'b1011_1111: begin
+			// end
+			// 8'b1100_0000: begin
+			// end
+			// 8'b1100_0001: begin
+			// end
+			// 8'b1100_0010: begin
+			// end
+			// 8'b1100_0011: begin
+			// end
+			// 8'b1100_0100: begin
+			// end
+			// 8'b1100_0101: begin
+			// end
+			// 8'b1100_0110: begin
+			// end
+			// 8'b1100_0111: begin
+			// end
+			// 8'b1100_1000: begin
+			// end
+			// 8'b1100_1001: begin
+			// end
+			// 8'b1100_1010: begin
+			// end
+			// 8'b1100_1011: begin
+			// end
+			// 8'b1100_1100: begin
+			// end
+			// 8'b1100_1101: begin
+			// end
+			// 8'b1100_1110: begin
+			// end
+			// 8'b1100_1111: begin
+			// end
+			// 8'b1101_0000: begin
+			// end
+			// 8'b1101_0001: begin
+			// end
+			// 8'b1101_0010: begin
+			// end
+			// 8'b1101_0011: begin
+			// end
+			// 8'b1101_0100: begin
+			// end
+			// 8'b1101_0101: begin
+			// end
+			// 8'b1101_0110: begin
+			// end
+			// 8'b1101_0111: begin
+			// end
+			// 8'b1101_1000: begin
+			// end
+			// 8'b1101_1001: begin
+			// end
+			// 8'b1101_1010: begin
+			// end
+			// 8'b1101_1011: begin
+			// end
+			// 8'b1101_1100: begin
+			// end
+			// 8'b1101_1101: begin
+			// end
+			// 8'b1101_1110: begin
+			// end
+			// 8'b1101_1111: begin
+			// end
 
 			8'b1110_0000: begin // Tbjc 0
-				jmp_op = 1;
+			 	jmp_op = 1;
 				jmp_condition = !w[0];
 			end
 			8'b1110_0001: begin // Tbjc 0
@@ -926,6 +951,28 @@ module ucode (
 			8'b1111_1111: begin // Tbjs 7
 				jmp_op = 1;
 				jmp_condition = w[7];
+			end
+			default: begin
+				alu_op = 0;
+				alu_mb = 0;
+				jmp_op = 0;
+				jmp_condition = 0;
+				mov_op = 0;
+				dst_w = 0;
+				dst_f = 0;
+				dst_memory = 0;
+				dst_reg = 0;
+				dst_por = 0;
+				dst_index = 0;
+				ram_op = 0;
+				dup_w = 0;
+				src_port = 0;
+				src_reg = 0;
+				stack_op = 0;
+				stack_dir = 0;
+				dst_cpu_cfg = 0;
+				dst_tmr_cfg = 0;
+				src_op = 0;
 			end
 		endcase
 	end

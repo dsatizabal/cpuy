@@ -1,13 +1,12 @@
 `default_nettype none
-`timescale 1ns/1ns
 
 module stack (
     input wire clk,
     input wire rst,
     input wire enable,
     input wire operation, // 1 = push, 0 = pop
-    input wire [15:0] data_in,
-    output reg [15:0] data_out,
+    input wire [9:0] data_in,
+    output reg [9:0] data_out,
     output wire full,
     output wire empty
 );
@@ -15,11 +14,11 @@ module stack (
 	parameter ADDR_WIDTH = 4; // log2(DEPTH)
 
 	// Stack memory and pointer
-	reg [15:0] stack_mem [DEPTH-1:0];
-	reg [ADDR_WIDTH-1:0] stack_ptr = 0;
+	reg [9:0] stack_mem [DEPTH - 1:0];
+	reg [ADDR_WIDTH - 1:0] stack_ptr = 0;
 
 	// Full and empty flag logic
-	assign full = (stack_ptr == DEPTH - 1);
+	assign full = (stack_ptr == (DEPTH - 1));
 	assign empty = (stack_ptr == 0);
 
 	always @(posedge clk or posedge rst) begin
