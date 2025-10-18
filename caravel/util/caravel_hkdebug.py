@@ -236,6 +236,14 @@ while (k != 'q'):
         v = input()
         val = int(v, 0)
         pll_trim = slave.exchange([CARAVEL_STREAM_WRITE, reg, val], 0)
+    elif k == '15':
+        data = slave.exchange([CARAVEL_STREAM_READ, 0x00], 256)
+        # Print header:
+        print("   " + " ".join(f"-{i:x}" for i in range(16)))
+        # Print data in hex format with 16 bytes per line:
+        for i in range(0, len(data), 16):
+            print(f"{i>>4:x}- ", end="")
+            print(" ".join(f"{b:02X}" for b in data[i:i+16]))
 
     elif k == 'q':
         print("Exiting...")

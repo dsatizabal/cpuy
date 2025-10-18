@@ -6,14 +6,14 @@ ARCH=rv32i
 
 .SUFFIXES:
 
-PATTERN = cpuy_bringup
+PATTERN = blink
 
 hex:  ${PATTERN:=.hex}
 
 %.elf: %.c ../../sections.lds ../../crt0_vex.S
 	#$(TOOLCHAIN_PATH)riscv32-unknown-elf-gcc -O0 -march=rv32i -Wl,-Bstatic,-T,../../sections.lds,--strip-debug -ffreestanding -nostdlib -o $@ ../../start.s ../../print_io.c $<
 	$(TOOLCHAIN_PATH)$(TOOLCHAIN_PREFIX)-gcc -I../../ -I../../generated/ -O0 -mabi=ilp32 -march=$(ARCH) -D__vexriscv__ -Wl,-Bstatic,-T,../../sections.lds,--strip-debug -ffreestanding -nostdlib -o $@ ../../crt0_vex.S ../../isr.c ../../stub.c $<
-	${TOOLCHAIN_PATH}$(TOOLCHAIN_PREFIX)-objdump -D $(PATTERN).elf > blink.lst
+	${TOOLCHAIN_PATH}$(TOOLCHAIN_PREFIX)-objdump -D $(PATTERN).elf > $(PATTERN).lst
 
 %.hex: %.elf
 	$(TOOLCHAIN_PATH)$(TOOLCHAIN_PREFIX)-objcopy -O verilog $< $@

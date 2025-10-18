@@ -2,4 +2,5 @@
 *.xml
 *.pyc
 *_cover
+*.venv
 /sim_build

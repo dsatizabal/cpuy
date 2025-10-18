@@ -4,7 +4,7 @@
 
 // --------------------------------------------------------
 // Firmware routine for bringing up the CPUy
-// --------------------------------------------------------
+// ---------------------------------------------------------
 
 void configure_io()
 {
@@ -19,14 +19,14 @@ void configure_io()
     reg_mprj_io_1 = GPIO_MODE_USER_STD_INPUT_PULLDOWN;
     
     // DATA
-    reg_mprj_io_2 = GPIO_MODE_USER_STD_INPUT_PULLDOWN;
-    reg_mprj_io_3 = GPIO_MODE_USER_STD_INPUT_PULLDOWN;
-    reg_mprj_io_4 = GPIO_MODE_USER_STD_INPUT_PULLDOWN;
-    reg_mprj_io_5 = GPIO_MODE_USER_STD_INPUT_PULLDOWN;
-    reg_mprj_io_6 = GPIO_MODE_USER_STD_INPUT_PULLDOWN;
-    reg_mprj_io_7 = GPIO_MODE_USER_STD_INPUT_PULLDOWN;
-    reg_mprj_io_8 = GPIO_MODE_USER_STD_INPUT_PULLDOWN;
-    reg_mprj_io_9 = GPIO_MODE_USER_STD_INPUT_PULLDOWN;
+    reg_mprj_io_2 = GPIO_MODE_USER_STD_INPUT_PULLUP;
+    reg_mprj_io_3 = GPIO_MODE_USER_STD_INPUT_PULLUP;
+    reg_mprj_io_4 = GPIO_MODE_USER_STD_INPUT_PULLUP;
+    reg_mprj_io_5 = GPIO_MODE_USER_STD_INPUT_PULLUP;
+    reg_mprj_io_6 = GPIO_MODE_USER_STD_INPUT_PULLUP;
+    reg_mprj_io_7 = GPIO_MODE_USER_STD_INPUT_PULLUP;
+    reg_mprj_io_8 = GPIO_MODE_USER_STD_INPUT_PULLUP;    
+    reg_mprj_io_9 = GPIO_MODE_USER_STD_INPUT_PULLUP;
 
     // PORT 0
     reg_mprj_io_10 = GPIO_MODE_USER_STD_OUTPUT;
@@ -69,13 +69,14 @@ void configure_io()
     while (reg_mprj_xfer == 1);
 }
 
+void pulse_gpio()
+{
+    reg_gpio_out = 1;
+    reg_gpio_out = 0;
+}
+
 void main()
 {
-
-    // ============================================================================
-    // idk what the following does, but it's in the Anton example code.
-    // I just changed the design number to 3 (cpuy) and modified the gpio configuration
-    // ============================================================================
     
     // Signal via the SoC's single 'gpio' pin that we're starting our main code execution...
     // Start with gpio=0:
@@ -85,6 +86,8 @@ void main()
     reg_gpio_mode0 = 0;
     reg_gpio_ien = 1;
     reg_gpio_oe = 1;
+
+    pulse_gpio();
 
     // Prepare the values that WILL be written into the
     // mux registers after 2 mux_conf_clk rising edges:
@@ -112,5 +115,10 @@ void main()
 
     configure_io();
 
+    // Pulse gpio again to show we're now finished:
+    pulse_gpio();
+
+    // No need for anything else as design 3 (cpuy) is free running and the
+    // SoC knows to halt at the exit of main().
 }
 

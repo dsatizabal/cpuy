@@ -1,6 +1,6 @@
 # CPUy Bring Up Guide
 
-This guide walks through the process of bringing up the CPUy project on the Caravel SoC development board.
+This guide walks through the process of bringing up the CPUy (GFMPW-1) project on the Caravel SoC development board.
 
 ## Setup Instructions
 

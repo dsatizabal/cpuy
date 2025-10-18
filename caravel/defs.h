@@ -57,7 +57,7 @@ extern uint32_t flashio_worker_end;
 #define reg_gpio_ieb    (*(volatile uint32_t*) CSR_GPIO_IEN_ADDR)
 #define reg_gpio_ien    (*(volatile uint32_t*) CSR_GPIO_IEN_ADDR)
 #define reg_gpio_oeb    (*(volatile uint32_t*) CSR_GPIO_OE_ADDR)
-//#define reg_gpio_oe    (*(volatile uint32_t*) CSR_GPIO_OE_ADDR)
+#define reg_gpio_oe    (*(volatile uint32_t*) CSR_GPIO_OE_ADDR)
 #define reg_gpio_in     (*(volatile uint32_t*) CSR_GPIO_IN_ADDR)
 #define reg_gpio_out    (*(volatile uint32_t*) CSR_GPIO_OUT_ADDR)
 //#define reg_gpio_pu   (*(volatile uint32_t*)0x21000008)
