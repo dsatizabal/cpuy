@@ -1,21 +1,72 @@
 #!/bin/bash
 
-# Colores
+# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # Sin color
+NC='\033[0m' # No Color
 
 # This script must be run as root
 if [ "$EUID" -ne 0 ]; then
-    echo -e "${YELLOW}⚠️  This script must be run as root!${NC}"
+    echo -e "${YELLOW}This script must be run as root!${NC}"
     exit 1
 fi
 
-echo -e "\n${BLUE}╔══════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║ Setting up Caravel Board environment ║${NC}"
-echo -e "${BLUE}╚══════════════════════════════════════╝${NC}\n"
+# RISC-V toolchain installation variables
+TOOLCHAIN_DIR="/opt"
+RISCVTOOLS="riscv64-unknown-elf-toolchain-10.2.0-2020.12.8-x86_64-linux-ubuntu14"
+TOOLCHAIN_URL="https://static.dev.sifive.com/dev-tools/freedom-tools/v2020.12/$RISCVTOOLS.tar.gz"
+SYMLINK_NAME="riscv-toolchain"
+
+echo -e "\n"
+
+# Check if toolchain is already installed and working
+if [ ! -f "/$TOOLCHAIN_DIR/$SYMLINK_NAME/bin/riscv64-unknown-elf-gcc" ]; then
+    echo -e "${YELLOW}Installing RISC-V toolchain...${NC}"
+        
+    # Check if downloaded tarball already exists
+    if [ -f "$TOOLCHAIN_DIR/$RISCVTOOLS.tar.gz" ]; then
+        sudo tar xf "$TOOLCHAIN_DIR/$RISCVTOOLS.tar.gz" -C "$TOOLCHAIN_DIR"      
+    else      
+        # Download with progress and error handling
+        if ! sudo wget --progress=bar:force --no-check-certificate -P "$TOOLCHAIN_DIR" "$TOOLCHAIN_URL"; then
+            echo -e "${RED}Failed to download RISC-V toolchain${NC}"
+            exit 1
+        fi
+
+        if ! sudo tar xf "$TOOLCHAIN_DIR/$RISCVTOOLS.tar.gz" -C "$TOOLCHAIN_DIR"; then
+            echo -e "${RED}Failed to extract toolchain${NC}"
+            exit 1
+        fi
+    fi
+    
+    if [ -f "$TOOLCHAIN_DIR/$RISCVTOOLS.tar.gz" ]; then
+        sudo rm -f "$TOOLCHAIN_DIR/$RISCVTOOLS.tar.gz"
+        echo "Tarball removed."
+    else
+        echo -e "No tarball found to remove."
+    fi
+
+    if [ ! -L "$TOOLCHAIN_DIR/$SYMLINK_NAME" ] && [ ! -d "$TOOLCHAIN_DIR/$SYMLINK_NAME" ]; then
+        sudo ln -sf "$TOOLCHAIN_DIR/$RISCVTOOLS" "$TOOLCHAIN_DIR/$SYMLINK_NAME"
+        echo "Symlink created."
+    else
+        echo -e "Symlink already exists.${NC}"
+    fi
+
+    export PATH="$TOOLCHAIN_DIR/$SYMLINK_NAME/bin:$PATH"
+    echo "PATH updated."
+
+    echo ""
+
+    if "$TOOLCHAIN_DIR/$SYMLINK_NAME/bin/riscv64-unknown-elf-gcc" --version > /dev/null 2>&1; then
+        echo -e "${GREEN}Toolchain successfully installed.${NC}"
+    else
+        echo -e "${RED}Error:${NC} Toolchain test failed. Check installation."
+        exit 1
+    fi
+fi
 
 # Linux user must be part of the dialout group to access the FTDI USB-serial interface
 CURRENT_USER=${SUDO_USER:-$USER}
@@ -29,7 +80,7 @@ fi
 VID_PID=$(lsusb | grep -i ftdi | grep -oE '[0-9a-f]{4}:[0-9a-f]{4}' | head -n1)
 
 if [ -z "$VID_PID" ]; then
-    echo -e "${RED}Error: No FTDI device detected.${NC}"
+    echo -e "\n${RED}Error: No FTDI device detected.${NC}"
     echo -e "(Ensure the board is connected)\n"
     # exit 1
 fi
@@ -79,74 +130,9 @@ fi
 
 cd ..
 
-#!/bin/bash
 
-# RISC-V toolchain installation variables
-TOOLCHAIN_DIR="/opt"
-RISCVTOOLS="riscv64-unknown-elf-toolchain-10.2.0-2020.12.8-x86_64-linux-ubuntu14"
-TOOLCHAIN_URL="https://static.dev.sifive.com/dev-tools/freedom-tools/v2020.12/$RISCVTOOLS.tar.gz"
-SYMLINK_NAME="riscv-toolchain"
 
 echo ""
-
-# Check if toolchain is already installed and working
-if [ ! -f "/opt/$SYMLINK_NAME/bin/riscv64-unknown-elf-gcc" ]; then
-    echo "❌ RISC-V toolchain is NOT installed"
-    echo "🔄 Installing RISC-V toolchain..."
-    
-    echo "🔧 Checking RISC-V toolchain installation..."
-    
-    # Check if downloaded tarball already exists
-    if [ -f "/opt/$RISCVTOOLS.tar.gz" ]; then
-        echo "📦 Found existing toolchain tarball, extracting..."
-        cd "$TOOLCHAIN_DIR" || exit 1
-        sudo tar xf "$RISCVTOOLS.tar.gz"
-    else
-        echo "📥 Downloading RISC-V toolchain..."
-        cd "$TOOLCHAIN_DIR" || exit 1
-        
-        # Download with progress and error handling
-        if ! sudo wget --progress=bar:force --no-check-certificate "$TOOLCHAIN_URL"; then
-            echo "❌ Failed to download RISC-V toolchain"
-            exit 1
-        fi
-        
-        echo "📦 Extracting toolchain..."
-        sudo tar xf "$RISCVTOOLS.tar.gz" || {
-            echo "❌ Failed to extract toolchain"
-            exit 1
-        }
-    fi
-    
-    # Remove tarball to save space
-    if [ -f "/opt/$RISCVTOOLS.tar.gz" ]; then
-        echo "🧹 Cleaning up downloaded tarball..."
-        sudo rm -f "/opt/$RISCVTOOLS.tar.gz"
-    fi
-    
-    # Create symlink if it doesn't exist
-    if [ ! -L "/opt/$SYMLINK_NAME" ] && [ ! -d "/opt/$SYMLINK_NAME" ]; then
-        echo "🔗 Creating symlink: $SYMLINK_NAME -> $RISCVTOOLS"
-        sudo ln -sf "$RISCVTOOLS" "$SYMLINK_NAME"
-    else
-        echo "✅ Symlink already exists"
-    fi
-    
-    # Add to PATH in current environment
-    export PATH="/opt/$SYMLINK_NAME/bin:$PATH"
-    
-    echo "✅ RISC-V toolchain installation completed"
-    
-    # Test the installation
-    echo "🧪 Testing toolchain installation..."
-    if /opt/$SYMLINK_NAME/bin/riscv64-unknown-elf-gcc --version > /dev/null 2>&1; then
-        echo "🎉 Toolchain test successful!"
-        /opt/$SYMLINK_NAME/bin/riscv64-unknown-elf-gcc --version
-    else
-        echo "❌ Toolchain test failed"
-        exit 1
-    fi
-fi
 
 # Interactive menu for next actions
 show_menu() {
