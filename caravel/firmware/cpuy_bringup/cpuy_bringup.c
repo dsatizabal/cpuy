@@ -6,27 +6,36 @@
 // Firmware routine for bringing up the CPUy
 // ---------------------------------------------------------
 
-void configure_io()
+void delay(const int d)
+{
+    // Configure timer for a single-shot countdown:
+    reg_timer0_config = 0;
+    reg_timer0_data = d;
+    reg_timer0_config = 1;
+    // Loop, waiting for value to reach zero:
+    reg_timer0_update = 1;  // latch current value
+    while (reg_timer0_value > 0) {
+        reg_timer0_update = 1;
+    }
+}
+
+void configure_gpio()
 {
     // RESET
-    reg_mprj_io_0 = GPIO_MODE_USER_STD_INPUT_PULLDOWN;
+    reg_mprj_io_0 = GPIO_MODE_MGMT_STD_INPUT_PULLDOWN;
 
     // EXTERNAL INTERRUPT
-    // IMPORTANT NOTE: 
-    // Changing configuration for IO[1-4] will interfere with programming flash. if you change them,
-    // You may need to hold reset while powering up the board and initiating flash to keep the process
-    // configuring these IO from their default values.
-    reg_mprj_io_1 = GPIO_MODE_USER_STD_INPUT_PULLDOWN;
+    reg_mprj_io_1 = GPIO_MODE_MGMT_STD_INPUT_PULLDOWN;
     
     // DATA
-    reg_mprj_io_2 = GPIO_MODE_USER_STD_INPUT_PULLUP;
-    reg_mprj_io_3 = GPIO_MODE_USER_STD_INPUT_PULLUP;
-    reg_mprj_io_4 = GPIO_MODE_USER_STD_INPUT_PULLUP;
-    reg_mprj_io_5 = GPIO_MODE_USER_STD_INPUT_PULLUP;
-    reg_mprj_io_6 = GPIO_MODE_USER_STD_INPUT_PULLUP;
-    reg_mprj_io_7 = GPIO_MODE_USER_STD_INPUT_PULLUP;
-    reg_mprj_io_8 = GPIO_MODE_USER_STD_INPUT_PULLUP;    
-    reg_mprj_io_9 = GPIO_MODE_USER_STD_INPUT_PULLUP;
+    reg_mprj_io_2 = GPIO_MODE_USER_STD_INPUT_PULLDOWN;
+    reg_mprj_io_3 = GPIO_MODE_USER_STD_INPUT_PULLDOWN;
+    reg_mprj_io_4 = GPIO_MODE_USER_STD_INPUT_PULLDOWN;
+    reg_mprj_io_5 = GPIO_MODE_USER_STD_INPUT_PULLDOWN;
+    reg_mprj_io_6 = GPIO_MODE_USER_STD_INPUT_PULLDOWN;
+    reg_mprj_io_7 = GPIO_MODE_USER_STD_INPUT_PULLDOWN;
+    reg_mprj_io_8 = GPIO_MODE_USER_STD_INPUT_PULLDOWN;    
+    reg_mprj_io_9 = GPIO_MODE_USER_STD_INPUT_PULLDOWN;
 
     // PORT 0
     reg_mprj_io_10 = GPIO_MODE_USER_STD_OUTPUT;
@@ -69,25 +78,35 @@ void configure_io()
     while (reg_mprj_xfer == 1);
 }
 
-void pulse_gpio()
-{
-    reg_gpio_out = 1;
-    reg_gpio_out = 0;
-}
-
 void main()
 {
     
-    // Signal via the SoC's single 'gpio' pin that we're starting our main code execution...
-    // Start with gpio=0:
-    reg_gpio_out = 0;
-    // Enable gpio OUTPUT:
+    // Configure Caravel's own "gpio" pin as an output:
     reg_gpio_mode1 = 1;
     reg_gpio_mode0 = 0;
     reg_gpio_ien = 1;
-    reg_gpio_oe = 1;
+    reg_gpio_oeb = 1;
 
-    pulse_gpio();
+    // Pulse gpio to show we're starting execution:
+    reg_gpio_out = 1;   // LED D3 OFF
+    delay(2000000);
+    reg_gpio_out = 0;   // LED D3 ON
+    delay(2000000);
+    reg_gpio_out = 1;   // LED D3 OFF
+    delay(2000000);
+    reg_gpio_out = 0;   // LED D3 ON
+    delay(2000000);
+    reg_gpio_out = 1;   // LED D3 OFF
+    delay(2000000);
+    reg_gpio_out = 0;   // LED D3 ON
+    delay(2000000);
+    reg_gpio_out = 1;   // LED D3 OFF
+    delay(2000000);
+    reg_gpio_out = 0;   // LED D3 ON
+    delay(2000000);
+    reg_gpio_out = 1;   // LED D3 OFF
+
+    configure_gpio();
 
     // Prepare the values that WILL be written into the
     // mux registers after 2 mux_conf_clk rising edges:
@@ -109,16 +128,32 @@ void main()
     reg_la1_data = (la1 |= 0x80000000);
     reg_la1_data = (la1 ^= 0x80000000);
 
-    // Design 3 should now be selected, but note that All GPIOs start in
-    // INPUT mode by default (per user_defines), so we won't see the
-    // intended output until the GPIO modes are reconfigured...
+    // Design 3 should now be selected
 
-    configure_io();
+    // enviar un reset al CPUy
+    // reg_mprj_datal = 1;
+    // reg_mprj_datal = 0;
+
+    // desactivar el housekeeping
+    reg_hkspi_disable = 1;
 
     // Pulse gpio again to show we're now finished:
-    pulse_gpio();
-
-    // No need for anything else as design 3 (cpuy) is free running and the
-    // SoC knows to halt at the exit of main().
+    reg_gpio_out = 1;   // LED D3 OFF
+    delay(2000000);
+    reg_gpio_out = 0;   // LED D3 ON
+    delay(2000000);
+    reg_gpio_out = 1;   // LED D3 OFF
+    delay(2000000);
+    reg_gpio_out = 0;   // LED D3 ON
+    delay(2000000);
+    reg_gpio_out = 1;   // LED D3 OFF
+    delay(2000000);
+    reg_gpio_out = 0;   // LED D3 ON
+    delay(2000000);
+    reg_gpio_out = 1;   // LED D3 OFF
+    delay(2000000);
+    reg_gpio_out = 0;   // LED D3 ON
+    delay(2000000);
+    reg_gpio_out = 1;   // LED D3 OFF
 }
 
