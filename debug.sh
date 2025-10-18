@@ -82,7 +82,7 @@ VID_PID=$(lsusb | grep -i ftdi | grep -oE '[0-9a-f]{4}:[0-9a-f]{4}' | head -n1)
 if [ -z "$VID_PID" ]; then
     echo -e "\n${RED}Error: No FTDI device detected.${NC}"
     echo -e "(Ensure the board is connected)\n"
-    # exit 1
+    exit 1
 fi
 
 VID=${VID_PID%:*}
