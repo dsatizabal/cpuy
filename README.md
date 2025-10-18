@@ -84,5 +84,6 @@ If you see this output, your board connection is working correctly.
 
 - **Caravel Board Repository**: https://github.com/efabless/caravel_board
 - **Multi-Project Repository**: https://github.com/algofoogle/algofoogle-multi-caravel
+- **Anton's Journal**: https://github.com/algofoogle/journal/blob/master/0218-2024-10-05.md
 
 *This documentation is actively being updated. Please check back for updates on the automated configuration script.*
