@@ -10,9 +10,9 @@ PATTERN = blink
 
 hex:  ${PATTERN:=.hex}
 
-%.elf: %.c ../../sections.lds ../../crt0_vex.S
-	#$(TOOLCHAIN_PATH)riscv32-unknown-elf-gcc -O0 -march=rv32i -Wl,-Bstatic,-T,../../sections.lds,--strip-debug -ffreestanding -nostdlib -o $@ ../../start.s ../../print_io.c $<
-	$(TOOLCHAIN_PATH)$(TOOLCHAIN_PREFIX)-gcc -I../../ -I../../generated/ -O0 -mabi=ilp32 -march=$(ARCH) -D__vexriscv__ -Wl,-Bstatic,-T,../../sections.lds,--strip-debug -ffreestanding -nostdlib -o $@ ../../crt0_vex.S ../../isr.c ../../stub.c $<
+%.elf: %.c ../../include/sections.lds ../../include/crt0_vex.S
+	#$(TOOLCHAIN_PATH)riscv32-unknown-elf-gcc -O0 -march=rv32i -Wl,-Bstatic,-T,../../include/sections.lds,--strip-debug -ffreestanding -nostdlib -o $@ ../../include/start.s ../../include/print_io.c $<
+	$(TOOLCHAIN_PATH)$(TOOLCHAIN_PREFIX)-gcc -I../../include/ -I../../include/generated/ -O0 -mabi=ilp32 -march=$(ARCH) -D__vexriscv__ -Wl,-Bstatic,-T,../../include/sections.lds,--strip-debug -ffreestanding -nostdlib -o $@ ../../include/crt0_vex.S ../../include/isr.c ../../include/stub.c $<
 	${TOOLCHAIN_PATH}$(TOOLCHAIN_PREFIX)-objdump -D $(PATTERN).elf > $(PATTERN).lst
 
 %.hex: %.elf
