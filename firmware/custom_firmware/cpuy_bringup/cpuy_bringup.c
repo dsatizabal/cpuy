@@ -12,12 +12,12 @@ void configure_gpio()
     // DATA
     reg_mprj_io_8 = GPIO_MODE_USER_STD_INPUT_PULLDOWN;    
     reg_mprj_io_9 = GPIO_MODE_USER_STD_INPUT_PULLDOWN;
-    reg_mprj_io_10 = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_11 = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_12 = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_13 = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_14 = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_15 = GPIO_MODE_USER_STD_OUTPUT;
+    reg_mprj_io_10 = GPIO_MODE_USER_STD_INPUT_PULLDOWN;
+    reg_mprj_io_11 = GPIO_MODE_USER_STD_INPUT_PULLDOWN;
+    reg_mprj_io_12 = GPIO_MODE_USER_STD_INPUT_PULLDOWN;
+    reg_mprj_io_13 = GPIO_MODE_USER_STD_INPUT_PULLDOWN;
+    reg_mprj_io_14 = GPIO_MODE_USER_STD_INPUT_PULLDOWN;
+    reg_mprj_io_15 = GPIO_MODE_USER_STD_INPUT_PULLDOWN;
 
     // PORT 0
     reg_mprj_io_16 = GPIO_MODE_USER_STD_OUTPUT;
@@ -40,12 +40,12 @@ void configure_gpio()
     reg_mprj_io_29 = GPIO_MODE_USER_STD_OUTPUT;
     reg_mprj_io_30 = GPIO_MODE_USER_STD_OUTPUT;
     reg_mprj_io_31 = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_32 = GPIO_MODE_MGMT_STD_OUTPUT;
-    reg_mprj_io_33 = GPIO_MODE_MGMT_STD_OUTPUT;
-    reg_mprj_io_34 = GPIO_MODE_MGMT_STD_OUTPUT;
-    reg_mprj_io_35 = GPIO_MODE_MGMT_STD_OUTPUT;
-    reg_mprj_io_36 = GPIO_MODE_MGMT_STD_OUTPUT;
-    reg_mprj_io_37 = GPIO_MODE_MGMT_STD_OUTPUT;
+    reg_mprj_io_32 = GPIO_MODE_USER_STD_OUTPUT;
+    reg_mprj_io_33 = GPIO_MODE_USER_STD_OUTPUT;
+    reg_mprj_io_34 = GPIO_MODE_USER_STD_OUTPUT;
+    reg_mprj_io_35 = GPIO_MODE_USER_STD_OUTPUT;
+    reg_mprj_io_36 = GPIO_MODE_USER_STD_OUTPUT;
+    reg_mprj_io_37 = GPIO_MODE_USER_STD_OUTPUT;
 
     // Initiate the serial transfer to configure IO
     reg_mprj_xfer = 1;
@@ -77,6 +77,6 @@ void main()
     reg_la1_data = (la1 |= 0x80000000);
     reg_la1_data = (la1 ^= 0x80000000);
 
-    // Design 3 should now be selected and free running
+    // Design 3 should now be selected and free running!
 }
 
